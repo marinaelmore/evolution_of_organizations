@@ -1,0 +1,132 @@
+.. _moran-process:
+
+Moran Process
+=============
+
+The strategies in the library can be pitted against one another in the
+`Moran process <https://en.wikipedia.org/wiki/Moran_process>`_, a population
+process simulating natural selection.
+
+The process works as follows. Given an
+initial population of players, the population is iterated in rounds consisting
+of:
+
+- matches played between each pair of players, with the cumulative total
+  scores recorded
+- a player is chosen to reproduce proportional to the player's score in the
+  round
+- a player is chosen at random to be replaced
+
+The process proceeds in rounds until the population consists of a single player
+type. That type is declared the winner. To run an instance of the process with
+the library, proceed as follows::
+
+    >>> import axelrod as axl
+    >>> players = [axl.Cooperator(), axl.Defector(),
+    ...            axl.TitForTat(), axl.Grudger()]
+    >>> mp = axl.MoranProcess(players, seed=1)
+    >>> populations = mp.play()
+    >>> mp.winning_strategy_name
+    'Tit For Tat'
+
+You can access some attributes of the process, such as the number of rounds::
+
+    >>> len(mp)
+    15
+
+The sequence of populations::
+
+    >>> import pprint
+    >>> pprint.pprint(populations)  # doctest: +SKIP
+    [Counter({'Defector': 1, 'Tit For Tat': 1, 'Grudger': 1, 'Cooperator': 1}),
+     Counter({'Defector': 1, 'Tit For Tat': 1, 'Grudger': 1, 'Cooperator': 1}),
+     Counter({'Cooperator': 2, 'Defector': 1, 'Tit For Tat': 1}),
+     Counter({'Defector': 2, 'Cooperator': 2}),
+     Counter({'Cooperator': 3, 'Defector': 1}),
+     Counter({'Cooperator': 3, 'Defector': 1}),
+     Counter({'Defector': 2, 'Cooperator': 2}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 3, 'Cooperator': 1}),
+     Counter({'Defector': 4})]
+
+
+The scores in each round::
+
+    >>> for row in mp.score_history:
+    ...     print([round(element, 1) for element in row])
+    [6.0, 7.0, 7.0, 7.0]
+    [7.0, 3.1, 7.0, 7.0]
+    [7.0, 3.1, 7.0, 7.0]
+    [7.0, 3.1, 7.0, 7.0]
+    [7.0, 3.1, 7.0, 7.0]
+    [3.0, 3.0, 5.0, 5.0]
+    [3.0, 3.0, 5.0, 5.0]
+    [3.1, 7.0, 7.0, 7.0]
+    [3.1, 7.0, 7.0, 7.0]
+    [9.0, 9.0, 9.0, 9.0]
+    [9.0, 9.0, 9.0, 9.0]
+    [9.0, 9.0, 9.0, 9.0]
+    [9.0, 9.0, 9.0, 9.0]
+    [9.0, 9.0, 9.0, 9.0]
+
+We can plot the results of a Moran process with `mp.populations_plot()`. Let's
+use a larger population to get a bit more data::
+
+    >>> import random
+    >>> import matplotlib.pyplot as plt
+    >>> players = [axl.Defector(), axl.Defector(), axl.Defector(),
+    ...        axl.Cooperator(), axl.Cooperator(), axl.Cooperator(),
+    ...        axl.TitForTat(), axl.TitForTat(), axl.TitForTat(),
+    ...        axl.Random()]
+    >>> mp = axl.MoranProcess(players=players, turns=200, seed=2)
+    >>> populations = mp.play()
+    >>> mp.winning_strategy_name
+    'Tit For Tat'
+    >>> ax = mp.populations_plot()
+    >>> plt.show()  #doctest: +SKIP
+
+
+.. image:: _static/getting_started/moran_example.svg
+   :width: 50%
+   :align: center
+
+Moran Process with Mutation
+---------------------------
+
+The :code:`MoranProcess` class also accepts an argument for a mutation rate.
+Nonzero mutation changes the Markov process so that it no longer has absorbing
+states, and will iterate forever. To prevent this, iterate with a loop (or
+function like :code:`takewhile` from :code:`itertools`)::
+
+    >>> import axelrod as axl
+    >>> players = [axl.Cooperator(), axl.Defector(),
+    ...            axl.TitForTat(), axl.Grudger()]
+    >>> mp = axl.MoranProcess(players, mutation_rate=0.1, seed=10)
+    >>> for _ in mp:
+    ...     if len(mp.population_distribution()) == 1:
+    ...         break
+    >>> mp.population_distribution()
+    Counter({'Defector': 4})
+
+It is possible to pass a fitness function that scales the utility values. A common one
+used in the literature, [Ohtsuki2006]_, is :math:`f(s) = 1 - w + ws` where :math:`w`
+denotes the intensity of selection::
+
+    >>> players = (axl.Cooperator(), axl.Defector(), axl.Defector(), axl.Defector())
+    >>> w = 0.95
+    >>> fitness_transformation = lambda score: 1 - w + w * score
+    >>> mp = axl.MoranProcess(players, turns=10, fitness_transformation=fitness_transformation, seed=3)
+    >>> populations = mp.play()
+    >>> mp.winning_strategy_name
+    'Defector'
+
+Other types of implemented Moran processes:
+
+- :ref:`moran-process-on-graphs`
+- :ref:`approximate-moran-process`
