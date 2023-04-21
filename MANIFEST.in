@@ -1,3 +1,0 @@
-include *.txt
-recursive-include docs *.rst
-recursive-include axelrod/data *
