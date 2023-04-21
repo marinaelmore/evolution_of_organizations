@@ -31,28 +31,29 @@ class Organization:
             team.head_count = round(self.head_count/num_teams)
     
     #TODO
-    def reallocate_team_resources(self, all_matches):
-        for match in all_matches:
-            scores = match.scores()
-            winner = match.winner()
-            final_score = match.final_score()
-            cooperation = match.cooperation()
-            norm_cooperation = match.normalised_cooperation()
-            #ranking = match.ranked_names()
+    def reallocate_team_resources(self, tournament):
+        scores = tournament.scores
+        wins = tournament.wins
+        final_score = tournament.scores
+        cooperation = tournament.cooperation
+        norm_cooperation = tournament.normalised_cooperation
+        ranking = tournament.ranked_names
+        payoff = tournament.payoff_matrix
 
-            # Display Output
-            #print("Teams: {}".format(ranking))
-            print("Winner: {}".format(winner))
-            print("Final Score: {}".format(final_score))
-            print("Cooperation: {}".format(norm_cooperation))
-            print("\n")
+        # Display Output
+        print("Teams: {}".format(ranking))
+        print("Wins: {}".format(wins))
+        print("Final Score: {}".format(final_score))
+        print("Cooperation: {}".format(norm_cooperation))
+        print("Payoff: {}".format(payoff))
+        print("\n")
 
 def allocate_company_resources():
     resources = float(randrange(COMPANY_RESOURCES_MIN, COMPANY_RESOURCES_MAX))
     head_count = randrange(COMPANY_HEADCOUNT_MIN, COMPANY_HEADCOUNT_MAX)
     return resources, head_count
 
-def run_tournament(teams):
+def run_match(teams):
     team1 = teams[0]
     team2 = teams[1]
     num_rounds = max(team1.head_count, team2.head_count)
@@ -63,27 +64,25 @@ def run_tournament(teams):
 
     return match
 
+def run_tournament(teams):
+    tournament = axl.Tournament(teams)
+    results = tournament.play()
+    return results
 
 def main():
     # Set Up Company and Teams
     my_org = Organization()
 
     # Run Tournament
-    all_matches = []
-    for games in range(0,NUM_ROUNDS):
-        matches_this_round = []
+    all_rounds = []
+    for round in range(0,NUM_ROUNDS):
 
-        # Run tourament between teams round robin
-        for i in range(0, len(my_org.teams)-1):
-            for j in range(i+1, len(my_org.teams)):
-                teams = (my_org.teams[i], my_org.teams[j])
+        tournament_results = run_tournament([team.strategy for team in my_org.teams])
 
-                match_outcome = run_tournament(teams)
-                matches_this_round.append(match_outcome)
-                all_matches.append(match_outcome)
+        all_rounds.append(tournament_results)
 
         # TODO - Relloacate resources after each round
-        my_org.reallocate_team_resources(matches_this_round)
+        my_org.reallocate_team_resources(tournament_results)
 
     # TODO - once game over, need to do some analysis on results
 
