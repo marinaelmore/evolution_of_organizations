@@ -39,35 +39,35 @@ class Organization:
         return team
 
 
-    #TODO
-    def reallocate_team_resources(self, tournament):
-        scores = tournament.scores
-        wins = tournament.wins
-        final_score = tournament.scores
-        cooperation = tournament.cooperation
-        norm_cooperation = tournament.normalised_cooperation
-        ranking = tournament.ranked_names
-        payoff = tournament.payoff_matrix
+    # #TODO
+    # def reallocate_team_resources(self, tournament):
+    #     scores = tournament.scores
+    #     wins = tournament.wins
+    #     final_score = tournament.scores
+    #     cooperation = tournament.cooperation
+    #     norm_cooperation = tournament.normalised_cooperation
+    #     ranking = tournament.ranked_names
+    #     payoff = tournament.payoff_matrix
         
-        #Find the total payoff for each team (sum across all rounds) -- ADDED BY ELIZABETH
-        payoff_df = pd.DataFrame(payoff)
-        sum_payoff = payoff_df.sum(axis=0)
-        sum_payoff = pd.DataFrame({'Team Payoff': sum_payoff})
-        sum_payoff.index.name = 'Team Number'
-        sum_payoff = sum_payoff.reset_index()+1
+    #     #Find the total payoff for each team (sum across all rounds) -- ADDED BY ELIZABETH
+    #     payoff_df = pd.DataFrame(payoff)
+    #     sum_payoff = payoff_df.sum(axis=0)
+    #     sum_payoff = pd.DataFrame({'Team Payoff': sum_payoff})
+    #     sum_payoff.index.name = 'Team Number'
+    #     sum_payoff = sum_payoff.reset_index()+1
         
-        #Find percent of total payoff, for each team (which will later be used to allocate resources) - ADDED BY ELIZABETH
-        total_payoff = sum_payoff['Team Payoff'].sum()
-        sum_payoff['Percent of Total Payoff'] = round(sum_payoff['Team Payoff'] / total_payoff * 100,2)
+    #     #Find percent of total payoff, for each team (which will later be used to allocate resources) - ADDED BY ELIZABETH
+    #     total_payoff = sum_payoff['Team Payoff'].sum()
+    #     sum_payoff['Percent of Total Payoff'] = round(sum_payoff['Team Payoff'] / total_payoff * 100,2)
         
-        # Display Output
-        print("Teams: {}".format(ranking))
-        print("Wins: {}".format(wins))
-        print("Final Score: {}".format(final_score))
-        print("Cooperation: {}".format(norm_cooperation))
-        print("Payoff: {}".format(payoff))
-        print("\nThe Payoff for each team after the tournament is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
-        print("\n")
+    #     # Display Output
+    #     print("Teams: {}".format(ranking))
+    #     print("Wins: {}".format(wins))
+    #     print("Final Score: {}".format(final_score))
+    #     print("Cooperation: {}".format(norm_cooperation))
+    #     print("Payoff: {}".format(payoff))
+    #     print("\nThe Payoff for each team after the tournament is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
+    #     print("\n")
 
 def allocate_company_resources():
     resources = float(randrange(COMPANY_RESOURCES_MIN, COMPANY_RESOURCES_MAX))
@@ -88,10 +88,10 @@ def run_match(team1, team2):
     #return all results from the round
     return matches_this_round
 
-def run_tournament(teams):
-    tournament = axl.Tournament(teams)
-    results = tournament.play()
-    return results
+# def run_tournament(teams):
+#     tournament = axl.Tournament(teams)
+#     results = tournament.play()
+#     return results
 
 def main():
     # Set Up Company and Teams
