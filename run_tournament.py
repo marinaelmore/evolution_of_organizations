@@ -1,5 +1,6 @@
 import axelrod as axl
 from random import randrange
+import pandas as pd
 from config import *
 
 
@@ -46,6 +47,8 @@ class Organization:
         sum_payoff = pd.DataFrame({'Team Payoff': sum_payoff})
         sum_payoff.index.name = 'Team Number'
         sum_payoff = sum_payoff.reset_index()+1
+        
+        #Find percent of total payoff, for each team (which will later be used to allocate resources) - ADDED BY ELIZABETH
         total_payoff = sum_payoff['Team Payoff'].sum()
         sum_payoff['Percent of Total Payoff'] = round(sum_payoff['Team Payoff'] / total_payoff * 100,2)
         
