@@ -30,11 +30,6 @@ class Organization:
             team.resources = float(self.resources/num_teams)
             team.head_count = round(self.head_count/num_teams)
             
-            
-        #Find the total payoff for each team (sum across all rounds) -- ADDED BY ELIZABETH
-        payoff_df = pd. DataFrame(payoff)
-        sum_payoff = payoff_df.sum(axis=0)
-        print("The Payoff for each team is: \n{}".format(sum_payoff))
         
     
     #TODO
@@ -46,6 +41,10 @@ class Organization:
         norm_cooperation = tournament.normalised_cooperation
         ranking = tournament.ranked_names
         payoff = tournament.payoff_matrix
+        
+        #Find the total payoff for each team (sum across all rounds) -- ADDED BY ELIZABETH
+        payoff_df = pd. DataFrame(payoff)
+        sum_payoff = payoff_df.sum(axis=0)
 
         # Display Output
         print("Teams: {}".format(ranking))
@@ -53,6 +52,7 @@ class Organization:
         print("Final Score: {}".format(final_score))
         print("Cooperation: {}".format(norm_cooperation))
         print("Payoff: {}".format(payoff))
+        print("The Payoff for each team is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
         print("\n")
 
 def allocate_company_resources():
