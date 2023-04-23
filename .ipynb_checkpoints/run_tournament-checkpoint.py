@@ -29,7 +29,7 @@ class Organization:
         for team in self.teams:
             team.resources = float(self.resources/num_teams)
             team.head_count = round(self.head_count/num_teams)
-        
+    
     #TODO
     def reallocate_team_resources(self, tournament):
         scores = tournament.scores
@@ -41,9 +41,12 @@ class Organization:
         payoff = tournament.payoff_matrix
         
         #Find the total payoff for each team (sum across all rounds) -- ADDED BY ELIZABETH
-        payoff_df = pd. DataFrame(payoff)
+        payoff_df = pd.DataFrame(payoff)
         sum_payoff = payoff_df.sum(axis=0)
-
+        sum_payoff = pd.DataFrame({'Team Payoff': sum_payoff})
+        sum_payoff.index.name = 'Team Number'
+        sum_payoff = sum_payoff.reset_index()+1
+        
         # Display Output
         print("Teams: {}".format(ranking))
         print("Wins: {}".format(wins))
