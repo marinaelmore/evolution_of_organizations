@@ -29,9 +29,7 @@ class Organization:
         for team in self.teams:
             team.resources = float(self.resources/num_teams)
             team.head_count = round(self.head_count/num_teams)
-            
         
-    
     #TODO
     def reallocate_team_resources(self, tournament):
         scores = tournament.scores
