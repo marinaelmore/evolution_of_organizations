@@ -53,7 +53,7 @@ class Organization:
         print("Final Score: {}".format(final_score))
         print("Cooperation: {}".format(norm_cooperation))
         print("Payoff: {}".format(payoff))
-        print("The Payoff for each team is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
+        print("\nThe Payoff for each team after the tournament is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
         print("\n")
 
 def allocate_company_resources():
