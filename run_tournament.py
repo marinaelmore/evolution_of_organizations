@@ -35,6 +35,7 @@ class Organization:
         payoff_df = pd. DataFrame(payoff)
         sum_payoff = payoff_df.sum(axis=0)
         print("The Payoff for each team is: \n{}".format(sum_payoff))
+        
     
     #TODO
     def reallocate_team_resources(self, tournament):
