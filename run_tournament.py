@@ -1,5 +1,6 @@
 import axelrod as axl
 from random import randrange
+import pandas as pd
 from config import *
 
 
@@ -47,13 +48,25 @@ class Organization:
         norm_cooperation = tournament.normalised_cooperation
         ranking = tournament.ranked_names
         payoff = tournament.payoff_matrix
-
+        
+        #Find the total payoff for each team (sum across all rounds) -- ADDED BY ELIZABETH
+        payoff_df = pd.DataFrame(payoff)
+        sum_payoff = payoff_df.sum(axis=0)
+        sum_payoff = pd.DataFrame({'Team Payoff': sum_payoff})
+        sum_payoff.index.name = 'Team Number'
+        sum_payoff = sum_payoff.reset_index()+1
+        
+        #Find percent of total payoff, for each team (which will later be used to allocate resources) - ADDED BY ELIZABETH
+        total_payoff = sum_payoff['Team Payoff'].sum()
+        sum_payoff['Percent of Total Payoff'] = round(sum_payoff['Team Payoff'] / total_payoff * 100,2)
+        
         # Display Output
         print("Teams: {}".format(ranking))
         print("Wins: {}".format(wins))
         print("Final Score: {}".format(final_score))
         print("Cooperation: {}".format(norm_cooperation))
         print("Payoff: {}".format(payoff))
+        print("\nThe Payoff for each team after the tournament is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
         print("\n")
 
 def allocate_company_resources():
