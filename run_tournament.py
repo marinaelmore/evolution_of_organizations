@@ -13,19 +13,19 @@ class Employee:
         return '{}'.format( self.strategy)
 
 class Team:
-    def __init__(self):
+    def __init__(self, team_id):
         self.resources = 0
-        self.head_count = 0
         self.employees = []
+        self.head_count = len(self.employees)
+        self.team_id = team_id
 
     def __repr__(self):
-        return 'Team: {} resources\nHead Count: {}\nEmployees: {}\n\n'.format(self.resources, self.head_count, self.employees)
+        return 'Team ID: {}, Resources: {}, Head Count: {}, Employees: {}'.format(self.team_id, self.resources, self.head_count, self.employees)
 
 class Organization:
     def __init__(self):
         self.resources = INIT_COMPANY_RESOURCES
         self.cost_per_head = COST_PER_HEAD
-        self.head_count =  INIT_COMPANY_RESOURCES / COST_PER_HEAD
         self.num_teams = NUM_TEAMS
         self.teams = []
         self.strategy_allocation = STRATEGY_ALLOCATION
@@ -39,7 +39,7 @@ class Organization:
 
     # Initialize: Equal division of head count and resources.
     def allocate_team_resources(self, team_id):
-        team = Team()
+        team = Team(team_id)
         team.resources = float(self.resources/self.num_teams)
         team.head_count = round(team.resources/self.cost_per_head)
         team_strategy = self.strategy_allocation[team_id]
@@ -57,7 +57,6 @@ class Organization:
                     break
 
         return team
-
 
     # #TODO
     # def reallocate_team_resources(self, tournament):
@@ -89,52 +88,74 @@ class Organization:
     #     print("\nThe Payoff for each team after the tournament is: \n{}".format(sum_payoff)) # -- ADDED BY ELIZABETH
     #     print("\n")
 
-def allocate_company_resources():
-    resources = float(rd.randrange(COMPANY_RESOURCES_MIN, COMPANY_RESOURCES_MAX))
-    head_count = rd.randrange(COMPANY_HEADCOUNT_MIN, COMPANY_HEADCOUNT_MAX)
-    return resources, head_count
-
-# TODO - create a tournament where each employee on team1 plays each employee on team2
+# run_match takes two Team objects and randomly assigns matches 2 * max(headcount) between
+# the two teams. It then aggregates the scores and the number of times/turns each player played
+# and returns both lists.
+# Return format: [[team 1 scores],[team 2 scores]], [[team 1 turns],[team 2 turns]]
 def run_match(team1, team2):
-    matches_this_round = []
-    num_rounds = max(team1.head_count, team2.head_count)
+    scores = [[0]*team1.head_count, [0]*team2.head_count]
+    num_turns = [[0]*team1.head_count, [0]*team2.head_count]
+    # Have a sufficient number of rounds so that each team member is likely to have at least one match.
+    rounds = 2*max(team1.head_count, team2.head_count)
 
-    #  TODO Run Match
-    # for all employees:
-        #match = axl.Match((employee1.strategy, employee2.strategy), num_rounds)
-        #match.play()
-        #matches_this_round.append(match outcome)
+    for r in range(0, rounds):
+        # Pick a random player from team 1 and team 2
+        player1_id = rd.randrange(0,team1.head_count)
+        player2_id = rd.randrange(0,team2.head_count)
+
+        # Match those players for a single turn with some noise (noise = variation from assigned strategy)
+        match = axl.Match((team1.employees[player1_id].strategy, team2.employees[player2_id].strategy), turns = 1, noise = 0.1)
+        match.play()
+
+        scores[0][player1_id] = match.final_score_per_turn()[0]
+        scores[1][player2_id] = match.final_score_per_turn()[1]
+        num_turns[0][player1_id] += 1
+        num_turns[1][player2_id] += 1
 
     #return all results from the round
-    return matches_this_round
-
-# def run_tournament(teams):
-#     tournament = axl.Tournament(teams)
-#     results = tournament.play()
-#     return results
+    return scores, num_turns
 
 def main():
     # Set Up Company and Teams
     my_org = Organization()
-    # Debug
-    #print(my_org.teams)
+
+    # Track total score and total number of matches PER player PER team.
+    total_scoreboard, total_matches = [], []
+    normalized_scoreboard = [] # normalized scoreboard: total_scoreboard / total_matches
+    for t in range(len(my_org.teams)):
+        total_scoreboard.append([0]*my_org.teams[t].head_count)
+        total_matches.append([0]*my_org.teams[t].head_count)
+        normalized_scoreboard.append([0]*my_org.teams[t].head_count)
 
     # Run Tournament
-    all_matches = []
-    for games in range(0,NUM_ROUNDS):
-        matches_this_round = []
-
+    for _ in range(0,NUM_ROUNDS):
         # Run tourament between teams round robin
         for i in range(0, len(my_org.teams)-1):
             for j in range(i+1, len(my_org.teams)):
                 # This will run all matches between employees on a team
-                match_outcome = run_match(my_org.teams[i], my_org.teams[j])
-                matches_this_round.append(match_outcome)
+                match_outcome, num_matches = run_match(my_org.teams[i], my_org.teams[j])
 
-            all_matches.append(matches_this_round)
+                # settle match scores in the total trackers
+                team_i, team_j = match_outcome[0], match_outcome[1]
+                num_matches_i, num_matches_j = num_matches[0], num_matches[1]
+                for ti in range(len(team_i)):
+                    total_scoreboard[i][ti] +=  team_i[ti]
+                    total_matches[i][ti] += num_matches_i[ti]
+                for tj in range(len(team_j)):
+                    total_scoreboard[j][tj] += team_j[tj]
+                    total_matches[j][tj] += num_matches_j[tj]
 
-        # TODO - Relloacate resources after each round
-        #my_org.reallocate_team_resources(matches_this_round)
+    # calculate the normalized scoreboard
+    for i in range(len(total_scoreboard)):
+        for s in range(len(total_scoreboard[i])):
+            normalized_scoreboard[i][s] = float(total_scoreboard[i][s])/total_matches[i][s]
+
+    if DEBUG:
+        for t in my_org.teams: print(t)
+        print()
+        print('Final scoreboard: {}'.format(total_scoreboard))
+        print('Total matches: {}'.format(total_matches))
+        print('Normalized scoreboard: {}'.format(normalized_scoreboard))
 
 
     # TODO - once game over, need to do some analysis on results
