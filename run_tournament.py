@@ -2,6 +2,8 @@ import axelrod as axl
 import random as rd
 import pandas as pd
 from config import *
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Employee:
@@ -145,6 +147,25 @@ def main():
                     total_scoreboard[j][tj] += team_j[tj]
                     total_matches[j][tj] += num_matches_j[tj]
 
+        print("Total_scoreboard at the end of round {}: {}".format(_, total_scoreboard))
+        score_sum = []
+        for team_score in total_scoreboard:
+            score_sum.append(sum(team_score))
+        score_sum = np.array(score_sum)
+        layoff_team = np.argmin(score_sum)
+
+        layoff_person = np.argmin(total_scoreboard[layoff_team])
+        # new_team = my_org.teams[layoff_team]
+        del my_org.teams[layoff_team].employees[layoff_person]
+        my_org.teams[layoff_team].head_count = len(my_org.teams[layoff_team].employees)
+        
+        del total_scoreboard[layoff_team][layoff_person]
+        # print('new team after layoff: {}'.format(my_org.teams))
+        # print('score_sum: {}'.format(score_sum))
+        # print('layoff_team {}'.format(layoff_team))
+        # print("teams at the end of round: {}".format(my_org.teams))
+
+
     # calculate the normalized scoreboard
     for i in range(len(total_scoreboard)):
         for s in range(len(total_scoreboard[i])):
@@ -157,6 +178,9 @@ def main():
         print('Total matches: {}'.format(total_matches))
         print('Normalized scoreboard: {}'.format(normalized_scoreboard))
 
+    plt.title('Boxplot of `year` variable')
+    plt.ylabel('year')
+    plt.show()
 
     # TODO - once game over, need to do some analysis on results
 
