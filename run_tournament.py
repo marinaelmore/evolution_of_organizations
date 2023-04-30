@@ -177,13 +177,6 @@ def main():
         for s in range(len(total_scoreboard[i])):
             normalized_scoreboard[i][s] = float(total_scoreboard[i][s])/total_matches[i][s]
 
-    if DEBUG:
-        for t in my_org.teams: print(t)
-        print()
-        print('Final scoreboard: {}'.format(total_scoreboard))
-        print('Total matches: {}'.format(total_matches))
-        print('Normalized scoreboard: {}'.format(normalized_scoreboard))
-
     # iterate through teams and print individual scores for each team
     for nn in range(len(my_org.teams)):
         plt.title('Team {} Performance'.format(nn+1))
@@ -198,6 +191,13 @@ def main():
             np.arange(1, my_org.teams[nn].head_count+1)
             )
         plt.show()
+
+    if DEBUG:
+        for t in my_org.teams: print(t)
+        print()
+        print('Final scoreboard: {}'.format(total_scoreboard))
+        print('Total matches: {}'.format(total_matches))
+        print('Normalized scoreboard: {}'.format(normalized_scoreboard))
 
 if __name__ == "__main__":
     main()
