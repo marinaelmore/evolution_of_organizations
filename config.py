@@ -6,6 +6,8 @@ STRATEGIES = [axl.Cooperator(), axl.Alternator(), axl.BackStabber()]
 INIT_COMPANY_RESOURCES = 300
 COST_PER_HEAD = 10
 NUM_TEAMS = 3
+
+# number of people you'll layoff per round
 LAYOFF_NUM = 1
 
 # Format: [Team 1: [Cooperator %, Alternator %, Backstabber %], Team 2... , Team 3]

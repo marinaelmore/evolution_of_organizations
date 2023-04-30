@@ -147,24 +147,30 @@ def main():
                     total_scoreboard[j][tj] += team_j[tj]
                     total_matches[j][tj] += num_matches_j[tj]
 
-        print("Total_scoreboard at the end of round {}: {}".format(_, total_scoreboard))
+        # print("Total_scoreboard at the end of round {}: {}".format(_, total_scoreboard))
+        
+        # calculate team scores to determine layoffs
         score_sum = []
         for team_score in total_scoreboard:
             score_sum.append(sum(team_score))
         score_sum = np.array(score_sum)
+        # find team number (lowest team_score) that will be impacted by layoffs
         layoff_team = np.argmin(score_sum)
 
-        layoff_person = np.argmin(total_scoreboard[layoff_team])
-        # new_team = my_org.teams[layoff_team]
-        del my_org.teams[layoff_team].employees[layoff_person]
-        my_org.teams[layoff_team].head_count = len(my_org.teams[layoff_team].employees)
-        
-        del total_scoreboard[layoff_team][layoff_person]
-        # print('new team after layoff: {}'.format(my_org.teams))
+        # iterate through LAYOFF_NUM (in config) and layoff staff one by one: 
+        for nn in range(LAYOFF_NUM):
+            # index of person getting laid off
+            layoff_person = np.argmin(total_scoreboard[layoff_team])
+            # del selected person from my_org (layoff)
+            del my_org.teams[layoff_team].employees[layoff_person]
+            # re-do headcount
+            my_org.teams[layoff_team].head_count = len(my_org.teams[layoff_team].employees)
+            # take the person out of total_scoreboard
+            del total_scoreboard[layoff_team][layoff_person]
+
         # print('score_sum: {}'.format(score_sum))
         # print('layoff_team {}'.format(layoff_team))
         # print("teams at the end of round: {}".format(my_org.teams))
-
 
     # calculate the normalized scoreboard
     for i in range(len(total_scoreboard)):
@@ -178,11 +184,20 @@ def main():
         print('Total matches: {}'.format(total_matches))
         print('Normalized scoreboard: {}'.format(normalized_scoreboard))
 
-    plt.title('Boxplot of `year` variable')
-    plt.ylabel('year')
-    plt.show()
-
-    # TODO - once game over, need to do some analysis on results
+    # iterate through teams and print individual scores for each team
+    for nn in range(len(my_org.teams)):
+        plt.title('Team {} Performance'.format(nn+1))
+        plt.xlabel('Players')
+        plt.ylabel('Scores')
+        plt.scatter(
+            range(1, (my_org.teams[nn].head_count)+1),
+            total_scoreboard[nn]
+            )
+        # visual tickmarks on x axis
+        plt.xticks(
+            np.arange(1, my_org.teams[nn].head_count+1)
+            )
+        plt.show()
 
 if __name__ == "__main__":
     main()
