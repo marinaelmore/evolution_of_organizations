@@ -20,10 +20,11 @@ class Team:
         self.employees = []
         self.head_count = len(self.employees)
         self.team_id = team_id
-
+        
     def __repr__(self):
         return 'Team ID: {}, Resources: {}, Head Count: {}, Employees: {}'.format(self.team_id, self.resources, self.head_count, self.employees)
 
+    
 class Organization:
     def __init__(self):
         self.resources = INIT_COMPANY_RESOURCES
@@ -171,6 +172,7 @@ def main():
         # print('score_sum: {}'.format(score_sum))
         # print('layoff_team {}'.format(layoff_team))
         # print("teams at the end of round: {}".format(my_org.teams))
+        
 
     # calculate the normalized scoreboard
     for i in range(len(total_scoreboard)):
