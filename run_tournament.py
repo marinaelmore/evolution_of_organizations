@@ -164,7 +164,6 @@ def main():
                         total_scoreboard[j][tj] += team_j[tj]
                         total_matches[j][tj] += num_matches_j[tj]
 
-        print(total_matches)
         # calculate the normalized scoreboard
         for i in range(len(total_scoreboard)):
             for s in range(len(total_scoreboard[i])):
