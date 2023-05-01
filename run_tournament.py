@@ -12,7 +12,7 @@ class Employee:
         self.payoff = 0
 
     def __repr__(self):
-        return '{}'.format( self.strategy)
+        return '{}'.format(self.strategy)
 
 class Team:
     def __init__(self, team_id):
@@ -191,13 +191,23 @@ def main():
             np.arange(1, my_org.teams[nn].head_count+1)
             )
         plt.show()
+    
+    #Find the total team and organization payoff (for normalized final scores): <--- ADDED BY ELIZABETH
+    payoff_per_team_normalized = np.sum(normalized_scoreboard, axis=1)
+    org_payoff_normalized = np.sum(payoff_per_team_normalized)
 
     if DEBUG:
         for t in my_org.teams: print(t)
         print()
         print('Final scoreboard: {}'.format(total_scoreboard))
+        print('\n')
         print('Total matches: {}'.format(total_matches))
+        print('\n')
         print('Normalized scoreboard: {}'.format(normalized_scoreboard))
+        print('\n')
+        print('Normalized payoff per team: {}'.format(payoff_per_team_normalized))
+        print('\n')
+        print('Total normalized organization payoff: {}'.format(org_payoff_normalized))
 
 if __name__ == "__main__":
     main()
