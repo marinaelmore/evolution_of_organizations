@@ -4,6 +4,7 @@ import pandas as pd
 from config import *
 import numpy as np
 import matplotlib.pyplot as plt
+import math
 
 
 class Employee:
@@ -20,11 +21,15 @@ class Team:
         self.employees = []
         self.head_count = len(self.employees)
         self.team_id = team_id
-        
+
+    def layoff_random(self):
+        self.employees.pop(rd.randrange(self.head_count))
+        self.head_count = len(self.employees)
+
     def __repr__(self):
         return 'Team ID: {}, Resources: {}, Head Count: {}, Employees: {}'.format(self.team_id, self.resources, self.head_count, self.employees)
 
-    
+
 class Organization:
     def __init__(self):
         self.resources = INIT_COMPANY_RESOURCES
@@ -39,6 +44,10 @@ class Organization:
 
         for team_id in range(0, self.num_teams):
             self.teams.append(self.allocate_team_resources(team_id))
+
+    def remove_team(self, idx):
+        self.teams.pop(idx)
+        self.num_teams = len(self.teams)
 
     # Initialize: Equal division of head count and resources.
     def allocate_team_resources(self, team_id):
@@ -122,94 +131,107 @@ def main():
     # Set Up Company and Teams
     my_org = Organization()
 
-    # Track total score and total number of matches PER player PER team.
-    total_scoreboard, total_matches = [], []
-    normalized_scoreboard = [] # normalized scoreboard: total_scoreboard / total_matches
-    for t in range(len(my_org.teams)):
-        total_scoreboard.append([0]*my_org.teams[t].head_count)
-        total_matches.append([0]*my_org.teams[t].head_count)
-        normalized_scoreboard.append([0]*my_org.teams[t].head_count)
+    year = 0
+    while year < TOTAL_YEARS:
 
-    # Run Tournament
-    for _ in range(0,NUM_ROUNDS):
-        # Run tourament between teams round robin
-        for i in range(0, len(my_org.teams)-1):
-            for j in range(i+1, len(my_org.teams)):
-                # This will run all matches between employees on a team
-                match_outcome, num_matches = run_match(my_org.teams[i], my_org.teams[j])
 
-                # settle match scores in the total trackers
-                team_i, team_j = match_outcome[0], match_outcome[1]
-                num_matches_i, num_matches_j = num_matches[0], num_matches[1]
-                for ti in range(len(team_i)):
-                    total_scoreboard[i][ti] +=  team_i[ti]
-                    total_matches[i][ti] += num_matches_i[ti]
-                for tj in range(len(team_j)):
-                    total_scoreboard[j][tj] += team_j[tj]
-                    total_matches[j][tj] += num_matches_j[tj]
+        if my_org.num_teams == 1:
+            break
 
-        # print("Total_scoreboard at the end of round {}: {}".format(_, total_scoreboard))
-        
-        # calculate team scores to determine layoffs
-        score_sum = []
-        for team_score in total_scoreboard:
-            score_sum.append(sum(team_score))
-        score_sum = np.array(score_sum)
-        # find team number (lowest team_score) that will be impacted by layoffs
-        layoff_team = np.argmin(score_sum)
+        # Track total score and total number of matches PER player PER team.
+        total_scoreboard, total_matches = [], []
+        normalized_scoreboard = [] # normalized scoreboard: total_scoreboard / total_matches
+        for t in range(len(my_org.teams)):
+            total_scoreboard.append([0]*my_org.teams[t].head_count)
+            total_matches.append([0]*my_org.teams[t].head_count)
+            normalized_scoreboard.append([0]*my_org.teams[t].head_count)
 
-        # iterate through LAYOFF_NUM (in config) and layoff staff one by one: 
-        for nn in range(LAYOFF_NUM):
-            # index of person getting laid off
-            layoff_person = np.argmin(total_scoreboard[layoff_team])
-            # del selected person from my_org (layoff)
-            del my_org.teams[layoff_team].employees[layoff_person]
-            # re-do headcount
-            my_org.teams[layoff_team].head_count = len(my_org.teams[layoff_team].employees)
-            # take the person out of total_scoreboard
-            del total_scoreboard[layoff_team][layoff_person]
+        # Run Tournament
+        for _ in range(0,NUM_ROUNDS):
+            # Run tourament between teams round robin
+            for i in range(0, len(my_org.teams)-1):
+                for j in range(i+1, len(my_org.teams)):
+                    # This will run all matches between employees on a team
+                    match_outcome, num_matches = run_match(my_org.teams[i], my_org.teams[j])
 
-        # print('score_sum: {}'.format(score_sum))
-        # print('layoff_team {}'.format(layoff_team))
-        # print("teams at the end of round: {}".format(my_org.teams))
-        
+                    # settle match scores in the total trackers
+                    team_i, team_j = match_outcome[0], match_outcome[1]
+                    num_matches_i, num_matches_j = num_matches[0], num_matches[1]
+                    for ti in range(len(team_i)):
+                        total_scoreboard[i][ti] +=  team_i[ti]
+                        total_matches[i][ti] += num_matches_i[ti]
+                    for tj in range(len(team_j)):
+                        total_scoreboard[j][tj] += team_j[tj]
+                        total_matches[j][tj] += num_matches_j[tj]
 
-    # calculate the normalized scoreboard
-    for i in range(len(total_scoreboard)):
-        for s in range(len(total_scoreboard[i])):
-            normalized_scoreboard[i][s] = float(total_scoreboard[i][s])/total_matches[i][s]
+        print(total_matches)
+        # calculate the normalized scoreboard
+        for i in range(len(total_scoreboard)):
+            for s in range(len(total_scoreboard[i])):
+                if total_matches[i][s] == 0: # player was randomly not assigned to match
+                    normalized_scoreboard[i][s] = 0 # while this is the lowest possible score, life isn't always fair.
+                else:
+                    normalized_scoreboard[i][s] = float(total_scoreboard[i][s])/total_matches[i][s]
 
-    # iterate through teams and print individual scores for each team
-    for nn in range(len(my_org.teams)):
-        plt.title('Team {} Performance'.format(nn+1))
-        plt.xlabel('Players')
-        plt.ylabel('Scores')
-        plt.scatter(
-            range(1, (my_org.teams[nn].head_count)+1),
-            total_scoreboard[nn]
-            )
-        # visual tickmarks on x axis
-        plt.xticks(
-            np.arange(1, my_org.teams[nn].head_count+1)
-            )
-        plt.show()
-    
-    #Find the total team and organization payoff (for normalized final scores): <--- ADDED BY ELIZABETH
-    payoff_per_team_normalized = np.sum(normalized_scoreboard, axis=1)
-    org_payoff_normalized = np.sum(payoff_per_team_normalized)
+        # Find the total team and organization payoff (for normalized final scores)
+        payoff_per_team_normalized = []
+        for i in range(len(normalized_scoreboard)):
+            payoff_per_team_normalized.append(np.sum(normalized_scoreboard[i])/len(normalized_scoreboard[i]))
 
-    if DEBUG:
-        for t in my_org.teams: print(t)
-        print()
-        print('Final scoreboard: {}'.format(total_scoreboard))
-        print('\n')
-        print('Total matches: {}'.format(total_matches))
-        print('\n')
-        print('Normalized scoreboard: {}'.format(normalized_scoreboard))
-        print('\n')
-        print('Normalized payoff per team: {}'.format(payoff_per_team_normalized))
-        print('\n')
-        print('Total normalized organization payoff: {}'.format(org_payoff_normalized))
+        org_payoff_normalized = np.sum(payoff_per_team_normalized)
+
+        ## Lay offs
+
+        # Determine team with lowest normalized score. They will be impacted by layoffs.
+        layoff_team_idx = np.argmin(payoff_per_team_normalized)
+        # Lay off LAYOFF_PCT percentage as defined in config
+        layoff_team = my_org.teams[layoff_team_idx]
+        total_layoff_count = int(math.ceil(LAYOFF_PCT * layoff_team.head_count))
+        # If there will be fewer than LAYOFF_ALL_THRESHOLD employees on a team, lay them all off.
+        remove_team = False
+        if (layoff_team.head_count - total_layoff_count) < LAYOFF_ALL_THRESHOLD:
+            total_layoff_count = layoff_team.head_count
+            remove_team = True
+
+        for i in range(total_layoff_count):
+            layoff_team.layoff_random()
+            print("Employees after layoff {}: {}".format(i, layoff_team.head_count))
+
+        if remove_team:
+            my_org.remove_team(layoff_team_idx)
+
+        year += 1
+
+
+        # TODO TODO
+        # iterate through teams and print individual scores for each team
+      #  for nn in range(len(my_org.teams)):
+      #      plt.title('Team {} Performance'.format(nn+1))
+      #      plt.xlabel('Players')
+      #      plt.ylabel('Scores')
+      #      plt.scatter(
+      #          range(1, (my_org.teams[nn].head_count)+1),
+      #          total_scoreboard[nn]
+      #          )
+      #      # visual tickmarks on x axis
+      #      plt.xticks(
+      #          np.arange(1, my_org.teams[nn].head_count+1)
+      #          )
+      #      plt.show()
+
+        if DEBUG:
+            for t in my_org.teams: print(t)
+            print()
+            print('Final scoreboard: {}'.format(total_scoreboard))
+            print('\n')
+            print('Total matches: {}'.format(total_matches))
+            print('\n')
+            print('Normalized scoreboard: {}'.format(normalized_scoreboard))
+            print('\n')
+            print('Normalized payoff per team: {}'.format(payoff_per_team_normalized))
+            print('\n')
+            print('Total normalized organization payoff: {}'.format(org_payoff_normalized))
+
 
 if __name__ == "__main__":
     main()
