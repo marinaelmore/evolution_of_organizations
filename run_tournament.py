@@ -29,8 +29,6 @@ class Team:
     def hire_employees(self, payoff):
         new_headcount = math.ceil(payoff)
 
-        print("Adding {} employees".format(new_headcount))
-    
         for i in range(0, new_headcount):
             strategy = STRATEGIES[rd.randint(0,len(STRATEGIES)-1)]
             self.employees.append(Employee(strategy))
