@@ -49,6 +49,22 @@ class Organization:
         self.teams.pop(idx)
         self.num_teams = len(self.teams)
 
+    def execute_layoffs(self, payoff_per_team_normalized, layoff_pct, layoff_all_threshold):
+        # Determine team with lowest normalized score. They will be impacted by layoffs.
+        m = min(i for i in payoff_per_team_normalized if i > 0)
+        layoff_team_idx = payoff_per_team_normalized.index(m)
+
+        # Lay off layoff_pct percentage as defined in config
+        layoff_team = self.teams[layoff_team_idx]
+        total_layoff_count = int(math.ceil(layoff_pct * layoff_team.head_count))
+
+        # If there will be fewer than layoff_all_threshold employees on a team, lay them all off.
+        if (layoff_team.head_count - total_layoff_count) < layoff_all_threshold:
+            total_layoff_count = layoff_team.head_count
+
+        for i in range(total_layoff_count):
+            layoff_team.layoff_random()
+
     # Initialize: Equal division of head count and resources.
     def allocate_team_resources(self, team_id):
         team = Team(team_id)
@@ -107,6 +123,11 @@ class Organization:
 def run_match(team1, team2):
     scores = [[0]*team1.head_count, [0]*team2.head_count]
     num_turns = [[0]*team1.head_count, [0]*team2.head_count]
+
+    # If either team has 0 players, there is no match to run. Skip.
+    if team1.head_count == 0 or team2.head_count == 0:
+        return scores, num_turns
+
     # Have a sufficient number of rounds so that each team member is likely to have at least one match.
     rounds = 2*max(team1.head_count, team2.head_count)
 
@@ -131,19 +152,24 @@ def main():
     # Set Up Company and Teams
     my_org = Organization()
 
+    # each index represents a year
+    lifetime_scoreboard_normalized = [[] for i in range(len(my_org.teams))] # avg payoff for employees on a specific team
+    lifetime_team_size = [[] for i in range(len(my_org.teams))] # number of team members per team
+    lifetime_org_score_normalized = [] # avg employee payoff in the organization
+
+    # Run it for TOTAL_YEARS iterations or until there is one team remaining.
     year = 0
     while year < TOTAL_YEARS:
 
-
-        if my_org.num_teams == 1:
-            break
+        #if my_org.num_teams == 1:
+        #    break
 
         # Track total score and total number of matches PER player PER team.
-        total_scoreboard, total_matches = [], []
-        normalized_scoreboard = [] # normalized scoreboard: total_scoreboard / total_matches
+        annual_scoreboard, annual_matches = [], []
+        normalized_scoreboard = [] # normalized scoreboard: annual_scoreboard / annual_matches
         for t in range(len(my_org.teams)):
-            total_scoreboard.append([0]*my_org.teams[t].head_count)
-            total_matches.append([0]*my_org.teams[t].head_count)
+            annual_scoreboard.append([0]*my_org.teams[t].head_count)
+            annual_matches.append([0]*my_org.teams[t].head_count)
             normalized_scoreboard.append([0]*my_org.teams[t].head_count)
 
         # Run Tournament
@@ -154,83 +180,99 @@ def main():
                     # This will run all matches between employees on a team
                     match_outcome, num_matches = run_match(my_org.teams[i], my_org.teams[j])
 
-                    # settle match scores in the total trackers
+                    # settle match scores in the annual trackers
                     team_i, team_j = match_outcome[0], match_outcome[1]
                     num_matches_i, num_matches_j = num_matches[0], num_matches[1]
                     for ti in range(len(team_i)):
-                        total_scoreboard[i][ti] +=  team_i[ti]
-                        total_matches[i][ti] += num_matches_i[ti]
+                        annual_scoreboard[i][ti] +=  team_i[ti]
+                        annual_matches[i][ti] += num_matches_i[ti]
                     for tj in range(len(team_j)):
-                        total_scoreboard[j][tj] += team_j[tj]
-                        total_matches[j][tj] += num_matches_j[tj]
+                        annual_scoreboard[j][tj] += team_j[tj]
+                        annual_matches[j][tj] += num_matches_j[tj]
 
         # calculate the normalized scoreboard
-        for i in range(len(total_scoreboard)):
-            for s in range(len(total_scoreboard[i])):
-                if total_matches[i][s] == 0: # player was randomly not assigned to match
-                    normalized_scoreboard[i][s] = 0 # while this is the lowest possible score, life isn't always fair.
+        for i in range(len(annual_scoreboard)):
+            for s in range(len(annual_scoreboard[i])):
+                if annual_matches[i][s] == 0: # player was randomly not assigned to match
+                    normalized_scoreboard[i][s] = 0 # While it is possible that this player did not play, it's highly unlikely considering we are iterating NUM_ROUNDS times. Set it to 0 for the case where the team has 0 players and therefore 0 matches too.
                 else:
-                    normalized_scoreboard[i][s] = float(total_scoreboard[i][s])/total_matches[i][s]
+                    normalized_scoreboard[i][s] = float(annual_scoreboard[i][s])/annual_matches[i][s]
 
-        # Find the total team and organization payoff (for normalized final scores)
+        # Find the annualized team and organization payoff (for normalized final scores)
         payoff_per_team_normalized = []
+        current_team_size = []
         for i in range(len(normalized_scoreboard)):
-            payoff_per_team_normalized.append(np.sum(normalized_scoreboard[i])/len(normalized_scoreboard[i]))
+            current_team_size.append(len(normalized_scoreboard[i]))
+            if len(normalized_scoreboard[i]) == 0:
+                payoff_per_team_normalized.append(0)
+            else:
+                payoff_per_team_normalized.append(np.sum(normalized_scoreboard[i])/len(normalized_scoreboard[i]))
 
         org_payoff_normalized = np.sum(payoff_per_team_normalized)
 
-        ## Lay offs
+        # Track lifetime metrics for reporting purposes
+        for x in range(len(payoff_per_team_normalized)):
+            lifetime_scoreboard_normalized[x].append(payoff_per_team_normalized[x])
+        for y in range(len(current_team_size)):
+            lifetime_team_size[y].append(current_team_size[y])
+        lifetime_org_score_normalized.append(org_payoff_normalized)
 
-        # Determine team with lowest normalized score. They will be impacted by layoffs.
-        layoff_team_idx = np.argmin(payoff_per_team_normalized)
-        # Lay off LAYOFF_PCT percentage as defined in config
-        layoff_team = my_org.teams[layoff_team_idx]
-        total_layoff_count = int(math.ceil(LAYOFF_PCT * layoff_team.head_count))
-        # If there will be fewer than LAYOFF_ALL_THRESHOLD employees on a team, lay them all off.
-        remove_team = False
-        if (layoff_team.head_count - total_layoff_count) < LAYOFF_ALL_THRESHOLD:
-            total_layoff_count = layoff_team.head_count
-            remove_team = True
+        if DEBUG:
+            print('Year {}:'.format(year))
+            for t in my_org.teams: print(t)
+            print('Normalized scoreboard: {}'.format(normalized_scoreboard))
+            print('Normalized payoff per team: {}'.format(payoff_per_team_normalized))
+            print('Annual normalized organization payoff: {}'.format(org_payoff_normalized))
+            print('\n')
 
-        for i in range(total_layoff_count):
-            layoff_team.layoff_random()
-            print("Employees after layoff {}: {}".format(i, layoff_team.head_count))
+        ## Lay off from worst team
+        my_org.execute_layoffs(payoff_per_team_normalized, LAYOFF_PCT, LAYOFF_ALL_THRESHOLD)
 
-        if remove_team:
-            my_org.remove_team(layoff_team_idx)
+        # Only continue if there are at least 2 teams in the organization
+        active_teams = 0
+        for t in my_org.teams:
+            if t.head_count > 0:
+                active_teams += 1
+
+        if active_teams == 1:
+            print('Simulation ended after {} years'.format(year))
+            break
 
         year += 1
 
 
-        # TODO TODO
-        # iterate through teams and print individual scores for each team
-      #  for nn in range(len(my_org.teams)):
-      #      plt.title('Team {} Performance'.format(nn+1))
-      #      plt.xlabel('Players')
-      #      plt.ylabel('Scores')
-      #      plt.scatter(
-      #          range(1, (my_org.teams[nn].head_count)+1),
-      #          total_scoreboard[nn]
-      #          )
-      #      # visual tickmarks on x axis
-      #      plt.xticks(
-      #          np.arange(1, my_org.teams[nn].head_count+1)
-      #          )
-      #      plt.show()
 
-        if DEBUG:
-            for t in my_org.teams: print(t)
-            print()
-            print('Final scoreboard: {}'.format(total_scoreboard))
-            print('\n')
-            print('Total matches: {}'.format(total_matches))
-            print('\n')
-            print('Normalized scoreboard: {}'.format(normalized_scoreboard))
-            print('\n')
-            print('Normalized payoff per team: {}'.format(payoff_per_team_normalized))
-            print('\n')
-            print('Total normalized organization payoff: {}'.format(org_payoff_normalized))
+    # Graph of team size over team
+    fig, ax = plt.subplots(3, figsize=(5, 10))
+    fig.subplots_adjust(hspace=0.5)
+    for i in range(len(lifetime_scoreboard_normalized)):
+        name = 'team {}'.format(i+1)
+        ax[0].plot(lifetime_scoreboard_normalized[i], label=name)
 
+    ax[0].legend(loc='upper right')
+    ax[0].set_xlabel('Year')
+    ax[0].set_ylabel('Points')
+    ax[0].set_xticks(np.arange(0, year+1))
+    ax[0].set_title('Normalized Points for a Team per Interaction vs Time')
+
+    for i in range(len(lifetime_team_size)):
+        name = 'team {}'.format(i+1)
+        ax[1].plot(lifetime_team_size[i], label=name)
+
+    ax[1].legend(loc='upper right')
+    ax[1].set_xlabel('Year')
+    ax[1].set_ylabel('Team Size')
+    ax[1].set_xticks(np.arange(0, year+1))
+    ax[1].set_title('Number of Team Members vs Time')
+
+    ax[2].plot(lifetime_org_score_normalized)
+    ax[2].set_xlabel('Year')
+    ax[2].set_ylabel('Points')
+    ax[2].set_xticks(np.arange(0, year+1))
+    ax[2].set_yticks(np.arange(0, max(lifetime_org_score_normalized),step=0.5))
+    ax[2].set_title('Average points across the organization vs Time')
+
+    plt.show()
 
 if __name__ == "__main__":
     main()
