@@ -26,6 +26,17 @@ class Team:
         self.employees.pop(rd.randrange(self.head_count))
         self.head_count = len(self.employees)
 
+    def hire_employees(self, payoff):
+        new_headcount = math.ceil(payoff)
+
+        print("Adding {} employees".format(new_headcount))
+    
+        for i in range(0, new_headcount):
+            strategy = STRATEGIES[rd.randint(0,len(STRATEGIES)-1)]
+            self.employees.append(Employee(strategy))
+            self.head_count = len(self.employees)
+
+
     def __repr__(self):
         return 'Team ID: {}, Resources: {}, Head Count: {}, Employees: {}'.format(self.team_id, self.resources, self.head_count, self.employees)
 
@@ -48,6 +59,21 @@ class Organization:
     def remove_team(self, idx):
         self.teams.pop(idx)
         self.num_teams = len(self.teams)
+
+    def execute_hiring(self, payoff_per_team_normalized, hiring_pct):
+        max_payoff = 0
+        max_team = None
+
+        # Determine team with highest normalized score. They will receive more resources
+        for i in range(0,len(self.teams)):
+            team_payoff = payoff_per_team_normalized[i]
+            team = self.teams[i]
+
+            if team_payoff > max_payoff:
+                max_payoff = team_payoff
+                max_team = team
+
+        max_team.hire_employees(max_payoff)
 
     def execute_layoffs(self, payoff_per_team_normalized, layoff_pct, layoff_all_threshold):
         # Determine team with lowest normalized score. They will be impacted by layoffs.
@@ -195,8 +221,11 @@ def main():
             print('Annual normalized organization payoff: {}'.format(org_payoff_normalized))
             print('\n')
 
-        ## Lay off from worst team
+        # Lay off from worst team
         my_org.execute_layoffs(payoff_per_team_normalized, LAYOFF_PCT, LAYOFF_ALL_THRESHOLD)
+
+        # Allow best team to hire more employees
+        my_org.execute_hiring(payoff_per_team_normalized, HIRING_PCT)
 
         # Only continue if there are at least 2 teams in the organization
         active_teams = 0

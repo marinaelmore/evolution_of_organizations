@@ -12,6 +12,10 @@ LAYOFF_NUM = 1
 LAYOFF_PCT = 0.2
 LAYOFF_ALL_THRESHOLD = 3 # If there are ever fewer than 3 employees on a team, lay them all off.
 
+# HIRING
+HIRING_PCT = 0.2
+HIRING_INFLATION = 0.07
+
 # Format: [Team 1: [Cooperator %, Alternator %, Backstabber %], Team 2... , Team 3]
 STRATEGY_ALLOCATION = [[0.8, 0.1, 0.1], [0.6, 0.3, 0.1], [0.6, 0.1, 0.3]]
 
