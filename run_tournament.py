@@ -202,7 +202,14 @@ def main():
             else:
                 payoff_per_team_normalized.append(np.sum(normalized_scoreboard[i])/len(normalized_scoreboard[i]))
 
-        org_payoff_normalized = np.sum(payoff_per_team_normalized)
+        # calculate the average payoff per team member in the organization
+        org_payoff_total = 0
+        total_headcount = 0
+        for p in range(len(payoff_per_team_normalized)):
+           if my_org.teams[p].head_count != 0:
+               org_payoff_total += payoff_per_team_normalized[p] * my_org.teams[p].head_count
+               total_headcount += my_org.teams[p].head_count
+        org_payoff_normalized = org_payoff_total / total_headcount
 
         # Track lifetime metrics for reporting purposes
         for x in range(len(payoff_per_team_normalized)):
@@ -264,7 +271,7 @@ def main():
     ax[2].set_xlabel('Year')
     ax[2].set_ylabel('Points')
     ax[2].set_xticks(np.arange(0, year+1))
-    ax[2].set_yticks(np.arange(0, max(lifetime_org_score_normalized),step=0.5))
+    #ax[2].set_yticks(np.arange(0, max(lifetime_org_score_normalized),step=0.5))
     ax[2].set_title('Average points across the organization vs Time')
 
     plt.show()
