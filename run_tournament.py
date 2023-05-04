@@ -272,7 +272,7 @@ def main():
     ax[2].set_ylabel('Points')
     ax[2].set_xticks(np.arange(0, year+1))
     #ax[2].set_yticks(np.arange(0, max(lifetime_org_score_normalized),step=0.5))
-    ax[2].set_title('Average points across the organization vs Time')
+    ax[2].set_title('Average Points Across the Organization vs Time')
 
     plt.show()
 
